@@ -8,10 +8,12 @@ import {
   TouchableHighlight,
   ActivityIndicator,
   Text,
+  Image,
   AsyncStorage,
   RefreshControl
 } from 'react-native';
 
+const WebPage = require('./WebPage');
 const api = require('../src/api.js');
 const moment = require('moment');
 const TOTAL_NEWS_ITEMS = 20;
@@ -42,7 +44,6 @@ async function fetchData() {
     const last_cache = time.last_cache;
     const current_datetime = moment();
     const diff_hours = current_datetime.diff(last_cache, 'hours');
-    console.log(time_str);
     if (diff_hours > 0) {
       news_items = null; // cache expired after 1 hour
     }
@@ -81,8 +82,22 @@ class NewsList extends Component {
     });
   }
 
-  viewItem(url) {
+  _viewNews(url) {
+    this.props.navigator.push({
+      title: 'News Detail',
+      component: WebPage,
+      passProps: {url: url, type: 'news'},
+      // tintColor: '#009688'
+    });
+  }
 
+  _viewComment(id) {
+    this.props.navigator.push({
+      title: 'Comment',
+      component: WebPage,
+      passProps: {id: id, type: 'comment'},
+      // tintColor: '#009688'
+    });
   }
 
   _onRefresh() {
@@ -95,19 +110,35 @@ class NewsList extends Component {
 
   renderRow(news, sectionID, rowID) {
     return (
-      <TouchableHighlight
-        underlayColor={"#E8E8E8"}
-        style={styles.separator}
-        onPress={this.viewItem.bind(this, news.url)}>
-        <View style={styles.rowContainer}>
-          <View>
-            <Text style={styles.title}>{news.title}</Text>
-            <Text style={styles.info}>
-              {`${news.score} points by ${news.by} ${moment(news.time*1000).fromNow()} | ${news.descendants} comments`}
-            </Text>
-          </View>
+      <View style={styles.rowContainer}>
+        <View style={styles.infoContainer}>
+          <TouchableHighlight
+            underlayColor={"#E8E8E8"}
+            onPress={this._viewNews.bind(this, news.url)}>
+            <View>
+              <Text style={styles.title}>{news.title}</Text>
+              <View style={{flexDirection: 'row'}}>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{`${news.score} points`}</Text>
+                </View>
+                <Text style={styles.info}>
+                  {` by ${news.by} ${moment(news.time*1000).fromNow()}`}
+                </Text>
+              </View>
+            </View>
+          </TouchableHighlight>
         </View>
-      </TouchableHighlight>
+        <View style={styles.commentContainer}>
+          <TouchableHighlight
+            underlayColor={"#E8E8E8"}
+            onPress={this._viewComment.bind(this, news.id)}>
+            <View>
+              <Image source={require('../static/img/bubble.png')} />
+              <Text style={{fontSize: 10}}>{`${news.descendants} comments`}</Text>
+            </View>
+          </TouchableHighlight>
+        </View>
+      </View>
     );
   }
 
@@ -145,14 +176,34 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd'
   },
   rowContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
     padding: 10
+  },
+  infoContainer: {
+    flex: 3
+  },
+  commentContainer: {
+    flex: 1
+  },
+  badge: {
+    backgroundColor: '#dddddd',
+    borderColor: '#dddddd',
+    borderWidth: 4,
+    borderRadius: 10
+  },
+  badgeText: {
+    fontSize: 10
   },
   title: {
     fontWeight: 'bold',
     fontSize: 14
   },
   info: {
-    fontSize: 12
+    fontSize: 12,
+    marginTop: 3
   }
 });
 
